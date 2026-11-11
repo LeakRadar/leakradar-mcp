@@ -1,0 +1,575 @@
+{
+  "identifier": "leakradar",
+  "name": "LeakRadar",
+  "version": "0.2.0",
+  "description": "MCP server for the LeakRadar.io API: exposure checks, credential leak search and monitoring from Claude, ChatGPT, Cursor and other MCP clients",
+  "author": "LeakRadar",
+  "authorUrl": "https://leakradar.io",
+  "homepage": "https://leakradar.io/en/mcp",
+  "cloudEndpoint": "https://mcp.leakradar.io/mcp",
+  "icon": "https://mcp.leakradar.io/icon.png",
+  "tags": [
+    "threat-intelligence",
+    "osint",
+    "data-breach",
+    "stealer-logs",
+    "credential-monitoring",
+    "security"
+  ],
+  "tools": [
+    {
+      "name": "account_status",
+      "description": "Plan, points balance, subscription dates and today's API usage against the plan limits (daily requests, concurrent searches, monitors). Call it before anything that spends points, or when the API answers 429 or 402.",
+      "inputSchema": {
+        "properties": {},
+        "title": "account_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "domain_overview",
+      "description": "Sampled counts of exposed records for a domain, by category (employees: logins on the company's own services; third_parties: company addresses used on other sites; customers: other people's logins on the company's sites), with the password-strength split. Cached server-side for a day, costs no points. For the records themselves use api_read on 'GET /search/domain/{domain}/{category}'.",
+      "inputSchema": {
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain"
+        ],
+        "title": "domain_overviewArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_monitors",
+      "description": "The account's monitors (watched emails, domains, keywords, raw and dark web queries), their alert channel, dataset, active state and auto-unlock budget. Changes go through api_create / api_update / api_delete on /notifications.",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_monitorsArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "monitoring_alerts",
+      "description": "Alert runs produced by the monitors (newest first), or, with run_id, the records of one run (masked unless unlocked). Filters: dataset (stealer_logs, combolist, raw, dark_web), status, notification_id. To act on a run: api_spend 'POST /notification_runs/{run_id}/leaks/unlock' with max, or api_export.",
+      "inputSchema": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "page": {
+            "default": 1,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 20,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dataset"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "notification_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notification Id"
+          }
+        },
+        "title": "monitoring_alertsArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "job_status",
+      "description": "Status of a background job: with task_id, one unlock task (from an /unlock/task call); without, the list of export jobs with their state and download link when ready.",
+      "inputSchema": {
+        "properties": {
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Task Id"
+          }
+        },
+        "title": "job_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_catalog",
+      "description": "List the operations of the LeakRadar API (method, path, class, summary) from the embedded OpenAPI snapshot, filtered by a substring (path, summary, tag) and/or a class: read, spend, export, create, update, delete, send. Then call api_describe for the parameters of one operation.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "default": "",
+            "title": "Query",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "title": "api_catalogArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_describe",
+      "description": "Parameters of one operation, e.g. 'POST /search/advanced': path params, query params with types and defaults, JSON body schema, and which api_* tool to call. Always consult it before calling an operation you have not used in this conversation.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_describeArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_read",
+      "description": "Call one READ operation of the LeakRadar API (GET endpoints and POST searches): credential searches, domain reports, dark web, raw files, monitoring history, exports and tasks status, profile and usage. Free of charge; credentials come masked unless the account already unlocked them; auto_unlock is always off here. Pick the operation from api_catalog and its parameters from api_describe, e.g. operation='POST /search/email', body={'email': 'user@example.com'}, query={'page_size': 20}.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "path_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path Params"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_readArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_spend",
+      "description": "Call one SPEND operation: unlock records, which debits points from the account (1 point per newly unlocked record or raw part). query.max (the ceiling of records to unlock) is mandatory. Confirm the cost with the user first; a read with the same filters shows how many records are locked. Async variants (/unlock/task) return a task id to poll with api_read 'GET /tasks/{task_id}'.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "path_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path Params"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_spendArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_export",
+      "description": "Call one EXPORT operation: queue a CSV/TXT/JSON export or get a download link. The job runs in the background; poll with api_read 'GET /exports' and give the user the link, never paste the file content.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "path_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path Params"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_exportArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_create",
+      "description": "Call one CREATE operation: a monitor (POST /notifications), an alert channel, an unlocked list. A monitor with auto_unlock needs max_points.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "path_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path Params"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_createArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_update",
+      "description": "Call one UPDATE operation (PATCH/PUT): monitors, alert channels, profile, lists, statuses, comments.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "path_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path Params"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_updateArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_delete",
+      "description": "Call one DELETE operation: delete monitors, channels, lists, comments, revoke invitations, remove team members, leave a team. Irreversible, confirm with the user.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "path_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path Params"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_deleteArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "api_send",
+      "description": "Call one SEND operation: test an alert channel (sends a message to an address, Slack, Discord, Telegram or webhook) or send/resend a team invitation email. Confirm with the user.",
+      "inputSchema": {
+        "properties": {
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "path_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Path Params"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Query"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Body"
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "title": "api_sendArguments",
+        "type": "object"
+      }
+    }
+  ]
+}

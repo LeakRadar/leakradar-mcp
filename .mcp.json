@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "leakradar": {
+      "type": "http",
+      "url": "https://mcp.leakradar.io/mcp"
+    }
+  }
+}

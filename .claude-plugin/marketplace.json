@@ -1,0 +1,14 @@
+{
+  "name": "leakradar",
+  "description": "The LeakRadar MCP connector for Claude Code",
+  "owner": {
+    "name": "LeakRadar"
+  },
+  "plugins": [
+    {
+      "name": "leakradar",
+      "source": "./",
+      "description": "MCP server for the LeakRadar.io API: exposure checks, credential leak search and monitoring"
+    }
+  ]
+}

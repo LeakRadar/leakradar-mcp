@@ -1,0 +1,27 @@
+{
+  "name": "leakradar",
+  "displayName": "LeakRadar",
+  "version": "0.2.0",
+  "description": "MCP server for the LeakRadar.io API: exposure checks, credential leak search and monitoring from Claude, ChatGPT, Cursor and other MCP clients",
+  "author": {
+    "name": "LeakRadar",
+    "url": "https://leakradar.io"
+  },
+  "homepage": "https://leakradar.io/en/mcp",
+  "repository": "https://github.com/LeakRadar/leakradar-mcp",
+  "license": "MIT",
+  "keywords": [
+    "leakradar",
+    "mcp",
+    "threat-intelligence",
+    "osint",
+    "data-breach",
+    "stealer-logs",
+    "credential-monitoring",
+    "security"
+  ],
+  "documentationUrl": "https://leakradar.io/en/mcp",
+  "supportUrl": "https://leakradar.io/en/contact-us",
+  "privacyPolicyUrl": "https://leakradar.io/en/privacy",
+  "termsOfServiceUrl": "https://leakradar.io/en/terms"
+}
